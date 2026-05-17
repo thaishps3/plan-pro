@@ -1,157 +1,186 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atención Focal</title>
+    <title>Planning</title>
     <link rel="stylesheet" href="planning/css/styles.css">
-    <style>.btn-hub{position:fixed;top:12px;left:12px;background:rgba(0,0,0,0.15);border:1px solid rgba(0,0,0,0.2);border-radius:20px;padding:4px 12px;font-size:12px;cursor:pointer;font-family:inherit;color:inherit;z-index:99;}@media print{.btn-hub{display:none;}}</style>
+    <style>
+        .btn-hub {
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            background: rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            color: inherit;
+            z-index: 99;
+        }
+
+        @media print {
+            .btn-hub {
+                display: none;
+            }
+        }
+    </style>
 </head>
+
 <body>
 
-<!-- Login gestionado por el hub -->
+    <!-- Login gestionado por el hub -->
 
-<!-- ══════════════════════════════════════════════════════════
+    <!-- ══════════════════════════════════════════════════════════
      APP PRINCIPAL
      ══════════════════════════════════════════════════════════ -->
-<div id="appScreen">
-<div class="main-container">
+    <div id="appScreen">
+        <div class="main-container">
 
-    <!-- Cabecera -->
-    <div class="app-topbar no-print" style="background:#0f7b8c; padding:10px 15px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <button class="btn-volver" onclick="window.location.href='menu-principal.html'"
-            style="font-size:12px;color:white;background:rgba(255,255,255,0.15);
+            <!-- Cabecera -->
+            <div class="app-topbar no-print"
+                style="background:#0f7b8c; padding:10px 15px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <button class="btn-volver" onclick="window.location.href='menu-principal.html'" style="font-size:12px;color:white;background:rgba(255,255,255,0.15);
                    border:1px solid rgba(255,255,255,0.3);border-radius:20px;
                    padding:4px 12px;cursor:pointer;font-family:inherit;white-space:nowrap;">← Menú principal</button>
-        <h1 style="flex:1;color:white;font-size:16px;font-weight:700;text-align:center;
-                   text-transform:uppercase;letter-spacing:0.5px;margin:0;">Atención Focal</h1>
-        <div id="planSesionInfo" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"></div>
-    </div>
-
-    <div class="header-info no-print">
-        <div class="header-left">
-            <div class="date-text" id="displayDate"></div>
-            <div class="auxiliar-badge">👤 <span id="headerAuxiliar"></span></div>
-        </div>
-        <div class="header-right">
-            <div class="plan-label">PLAN <span id="planLabelTop">A</span></div>
-            <button class="btn-change-user" onclick="changeUser()">Cambiar usuario</button>
-        </div>
-    </div>
-
-    <!-- Tabs de plan -->
-    <div class="tabs no-print">
-        <button class="tab-btn active" onclick="setPlan('A')">A</button>
-        <button class="tab-btn" onclick="setPlan('B')">B</button>
-        <button class="tab-btn" onclick="setPlan('C')">C</button>
-        <button class="tab-btn" onclick="setPlan('D')">D</button>
-    </div>
-
-    <!-- Gestión de lista permanente -->
-    <div class="collapsible-box no-print">
-        <div class="collapsible-header" onclick="toggleBox('adminBox')">
-            <span>⚙️ Gestión de Usuarios</span>
-            <span id="adminBox-arrow">▼</span>
-        </div>
-        <div class="collapsible-content" id="adminBox">
-            <div class="form-box">
-                <input type="hidden" id="editId">
-                <input type="text" id="nombre" placeholder="Nombre completo del residente">
-                <input type="text" id="hab" placeholder="Habitación / Cama">
-                <select id="pañal">
-                    <option value="-">Pañal — sin cambio programado</option>
-                    <option value="S">Talla S</option>
-                    <option value="M">Talla M</option>
-                    <option value="L">Talla L</option>
-                    <option value="XL">Talla XL</option>
-                </select>
-                <input type="text" id="obs" placeholder="Observaciones permanentes">
-                <label class="option-check risk">
-                    <input type="checkbox" id="riesgo"> ⚠️ USUARIO DE RIESGO
-                </label>
-                <label class="option-check">
-                    <input type="checkbox" id="encamado"> 🛏️ USUARIO ENCAMADO
-                </label>
-                <button class="btn-save" onclick="saveUser()">💾 GUARDAR EN LISTA</button>
+                <h1 style="flex:1;color:white;font-size:16px;font-weight:700;text-align:center;
+                   text-transform:uppercase;letter-spacing:0.5px;margin:0;">Planning</h1>
+                <div id="planSesionInfo" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;"></div>
             </div>
-            <div id="editList"></div>
-        </div>
-    </div>
 
-    <!-- Backup / Restaurar -->
-    <div class="backup-box no-print">
-        <div class="collapsible-header" onclick="toggleBox('backupBox')" style="background: var(--muted);">
-            <span>💾 BACKUP — EXPORTAR / RESTAURAR</span>
-            <span id="backupBox-arrow">▼</span>
-        </div>
-        <div class="collapsible-content" id="backupBox">
-            <div class="backup-inner">
-                <p style="font-size:0.82em; color:var(--muted);">
-                    Exporta todos los datos (usuarios, planes e historial) a un archivo JSON seguro.
-                    Para restaurar, importa ese mismo archivo.
-                </p>
-                <div class="backup-row">
-                    <button class="btn-backup export" onclick="exportBackup()">⬇️ Exportar backup</button>
-                    <button class="btn-backup import" onclick="document.getElementById('importFile').click()">⬆️ Restaurar backup</button>
+            <div class="header-info no-print">
+                <div class="header-left">
+                    <div class="date-text" id="displayDate"></div>
+                    <div class="auxiliar-badge">👤 <span id="headerAuxiliar"></span></div>
                 </div>
-                <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(event)">
-                <div class="backup-hint" id="backupStatus">Los datos se guardan automáticamente en este dispositivo.</div>
+                <div class="header-right">
+                    <div class="plan-label">PLAN <span id="planLabelTop">A</span></div>
+                    <button class="btn-change-user" onclick="changeUser()">Cambiar usuario</button>
+                </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Checklist principal -->
-    <div id="checklist" class="no-print"></div>
+            <!-- Tabs de plan -->
+            <div class="tabs no-print">
+                <button class="tab-btn active" onclick="setPlan('A')">A</button>
+                <button class="tab-btn" onclick="setPlan('B')">B</button>
+                <button class="tab-btn" onclick="setPlan('C')">C</button>
+                <button class="tab-btn" onclick="setPlan('D')">D</button>
+            </div>
 
-    <!-- Historial del día -->
-    <div class="history-box no-print">
-        <div class="history-header" onclick="toggleBox('historialBox')">
-            <span>📋 HISTORIAL DEL DÍA</span>
-            <span id="historialBox-arrow">▼</span>
-        </div>
-        <div class="collapsible-content" id="historialBox">
-            <div style="padding: 10px 14px; display:flex; justify-content:flex-end;">
-                <button id="btnToggleMatrix" onclick="toggleMatrixView()"
-                    style="background:var(--primary-lt); color:var(--primary-dk); border:none;
+            <!-- Gestión de lista permanente -->
+            <div class="collapsible-box no-print">
+                <div class="collapsible-header" onclick="toggleBox('adminBox')">
+                    <span>⚙️ Gestión de Usuarios</span>
+                    <span id="adminBox-arrow">▼</span>
+                </div>
+                <div class="collapsible-content" id="adminBox">
+                    <div class="form-box">
+                        <input type="hidden" id="editId">
+                        <input type="text" id="nombre" placeholder="Nombre completo del residente">
+                        <input type="text" id="hab" placeholder="Habitación / Cama">
+                        <select id="pañal">
+                            <option value="-">Pañal — sin cambio programado</option>
+                            <option value="S">Talla S</option>
+                            <option value="M">Talla M</option>
+                            <option value="L">Talla L</option>
+                            <option value="XL">Talla XL</option>
+                        </select>
+                        <input type="text" id="obs" placeholder="Observaciones permanentes">
+                        <label class="option-check risk">
+                            <input type="checkbox" id="riesgo"> ⚠️ USUARIO DE RIESGO
+                        </label>
+                        <label class="option-check obs">
+                            <input type="checkbox" id="observacion"> 🔵 EN OBSERVACIÓN
+                        </label>
+                        <label class="option-check">
+                            <input type="checkbox" id="encamado"> 🛏️ USUARIO ENCAMADO
+                        </label>
+                        <button class="btn-save" onclick="saveUser()">💾 GUARDAR EN LISTA</button>
+                    </div>
+                    <div id="editList"></div>
+                </div>
+            </div>
+
+            <!-- Backup / Restaurar -->
+            <div class="backup-box no-print">
+                <div class="collapsible-header" onclick="toggleBox('backupBox')" style="background: var(--muted);">
+                    <span>💾 BACKUP — EXPORTAR / RESTAURAR</span>
+                    <span id="backupBox-arrow">▼</span>
+                </div>
+                <div class="collapsible-content" id="backupBox">
+                    <div class="backup-inner">
+                        <p style="font-size:0.82em; color:var(--muted);">
+                            Exporta todos los datos (usuarios, planes e historial) a un archivo JSON seguro.
+                            Para restaurar, importa ese mismo archivo.
+                        </p>
+                        <div class="backup-row">
+                            <button class="btn-backup export" onclick="exportBackup()">⬇️ Exportar backup</button>
+                            <button class="btn-backup import" onclick="document.getElementById('importFile').click()">⬆️
+                                Restaurar backup</button>
+                        </div>
+                        <input type="file" id="importFile" accept=".json" style="display:none"
+                            onchange="importBackup(event)">
+                        <div class="backup-hint" id="backupStatus">Los datos se guardan automáticamente en este
+                            dispositivo.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Checklist principal -->
+            <div id="checklist" class="no-print"></div>
+
+            <!-- Historial del día -->
+            <div class="history-box no-print">
+                <div class="history-header" onclick="toggleBox('historialBox')">
+                    <span>📋 HISTORIAL DEL DÍA</span>
+                    <span id="historialBox-arrow">▼</span>
+                </div>
+                <div class="collapsible-content" id="historialBox">
+                    <div style="padding: 10px 14px; display:flex; justify-content:flex-end;">
+                        <button id="btnToggleMatrix" onclick="toggleMatrixView()" style="background:var(--primary-lt); color:var(--primary-dk); border:none;
                            padding:8px 14px; border-radius:8px; cursor:pointer;
                            font-size:0.82em; font-weight:700;">
-                    Ver Todos los Planes
+                            Ver Todos los Planes
+                        </button>
+                    </div>
+                    <table id="matrixTable">
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Hab / Plan</th>
+                                <th>Residente</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Botón de reporte -->
+            <div class="report-section no-print">
+                <button class="btn-report" onclick="prepararImpresion()">
+                    🖨️ GENERAR REPORTE PARA IMPRIMIR
                 </button>
             </div>
-            <table id="matrixTable">
-                <thead>
-                    <tr>
-                        <th>Hora</th>
-                        <th>Hab / Plan</th>
-                        <th>Residente</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
 
-    <!-- Botón de reporte -->
-    <div class="report-section no-print">
-        <button class="btn-report" onclick="prepararImpresion()">
-            🖨️ GENERAR REPORTE PARA IMPRIMIR
-        </button>
-    </div>
+            <!-- Área de impresión (solo visible al imprimir) -->
+            <div id="printArea" class="only-print"></div>
 
-    <!-- Área de impresión (solo visible al imprimir) -->
-    <div id="printArea" class="only-print"></div>
+            <div class="footer no-print">
+                Diseño Funcional: <strong>TP</strong> &nbsp;·&nbsp; Desarrollo: IA Engine &nbsp;·&nbsp; v2.0
+            </div>
 
-    <div class="footer no-print">
-        Diseño Funcional: <strong>AF</strong> &nbsp;·&nbsp; Desarrollo: Gemini Engine &nbsp;·&nbsp; v2.0
-    </div>
-
-</div><!-- /main-container -->
-</div><!-- /appScreen -->
+        </div><!-- /main-container -->
+    </div><!-- /appScreen -->
 
 
 
-<script src="js/auth.js"></script>
-<script src="planning/js/script.js"></script>
-<script src="planning/js/session-check.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="planning/js/script.js"></script>
+    <script src="planning/js/session-check.js"></script>
 </body>
+
 </html>

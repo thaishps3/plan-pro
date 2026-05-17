@@ -310,6 +310,13 @@ select:focus {
   font-weight: 700;
 }
 
+.option-check.obs {
+  background: #eaf3fb;
+  border-color: #90c4e8;
+  color: #1a5f8a;
+  font-weight: 700;
+}
+
 .btn-save {
   background: var(--success);
   color: white;
@@ -394,6 +401,11 @@ select:focus {
   background: var(--danger-lt);
 }
 
+.user-card.is-obs {
+  border-left-color: #1a7abf;
+  background: #eaf3fb;
+}
+
 .user-card.checked {
   border-left-color: var(--success);
   background: var(--success-lt);
@@ -428,6 +440,7 @@ select:focus {
 .badge-cama  { background: #dce8ec;            color: var(--primary-dk); }
 .badge-pañal { background: var(--primary-lt);  color: var(--primary-dk); }
 .badge-done  { background: var(--success-lt);  color: var(--success); }
+.badge-obs   { background: #eaf3fb;             color: #1a5f8a; }
 
 .incidencia-txt {
   color: var(--danger);

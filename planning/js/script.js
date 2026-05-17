@@ -176,8 +176,9 @@ function saveUser() {
         hab:       document.getElementById('hab').value.trim(),
         pañal:     document.getElementById('pañal').value,
         obs:       document.getElementById('obs').value.trim(),
-        riesgo:    document.getElementById('riesgo').checked,
-        encamado:  document.getElementById('encamado').checked,
+        riesgo:       document.getElementById('riesgo').checked,
+        observacion:  document.getElementById('observacion') ? document.getElementById('observacion').checked : false,
+        encamado:     document.getElementById('encamado').checked,
         done:      false,
         time:      null,
         incidencia: ''
@@ -208,6 +209,7 @@ function startEdit(id) {
     document.getElementById('pañal').value      = u.pañal;
     document.getElementById('obs').value        = u.obs;
     document.getElementById('riesgo').checked   = u.riesgo;
+    if (document.getElementById('observacion')) document.getElementById('observacion').checked = u.observacion || false;
     document.getElementById('encamado').checked = u.encamado;
     window.scrollTo(0, 0);
     if (!document.getElementById('adminBox').classList.contains('open')) toggleBox('adminBox');
@@ -226,6 +228,7 @@ function resetForm() {
     ['nombre', 'hab', 'obs'].forEach(f => document.getElementById(f).value = '');
     document.getElementById('pañal').value      = '-';
     document.getElementById('riesgo').checked   = false;
+    if (document.getElementById('observacion')) document.getElementById('observacion').checked = false;
     document.getElementById('encamado').checked = false;
 }
 
@@ -330,11 +333,18 @@ function render() {
     renderHistorial();
 }
 
+function prioridad(u) {
+    if (u.riesgo)      return 0;
+    if (u.observacion) return 1;
+    if (u.encamado)    return 2;
+    return 3;
+}
+
 function renderChecklist() {
     const checkDiv   = document.getElementById('checklist');
     checkDiv.innerHTML = '';
-    const pendientes  = data[currentPlan].filter(u => !u.done);
-    const completados = data[currentPlan].filter(u => u.done);
+    const pendientes  = data[currentPlan].filter(u => !u.done).sort((a,b) => prioridad(a) - prioridad(b));
+    const completados = data[currentPlan].filter(u => u.done).sort((a,b) => prioridad(a) - prioridad(b));
 
     if (pendientes.length === 0 && completados.length === 0) {
         checkDiv.innerHTML = `<div class="empty-state">
@@ -428,10 +438,11 @@ function renderHistorial() {
 /* ── CREAR TARJETA ────────────────────────────────────────── */
 function createCard(u) {
     const card = document.createElement('div');
-    card.className = `user-card ${u.riesgo ? 'is-risk' : ''} ${u.done ? 'checked' : ''}`;
+    card.className = `user-card ${u.riesgo ? 'is-risk' : u.observacion ? 'is-obs' : ''} ${u.done ? 'checked' : ''}`;
 
     let badges = '';
     if (u.riesgo)                    badges += `<span class="badge badge-risk">⚠️ RIESGO</span>`;
+    if (u.observacion)               badges += `<span class="badge badge-obs">🔵 Observación</span>`;
     if (u.encamado)                  badges += `<span class="badge badge-cama">🛏️ Encamado</span>`;
     if (u.pañal && u.pañal !== '-') badges += `<span class="badge badge-pañal">🩺 Pañal ${u.pañal}</span>`;
     if (u.done && u.time)            badges += `<span class="badge badge-done">✓ ${u.time}</span>`;

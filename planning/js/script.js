@@ -7,8 +7,9 @@ let currentPlan     = 'A';
 let viewAllMode     = false;
 let currentAuxiliar = '';
 
-let data   = JSON.parse(localStorage.getItem('geria_p_v2')) || { A: [], B: [], C: [], D: [] };
-let matrix = JSON.parse(localStorage.getItem('geria_m_v2')) || [];
+let data     = JSON.parse(localStorage.getItem('geria_p_v2')) || { A: [], B: [], C: [], D: [] };
+let matrix   = JSON.parse(localStorage.getItem('geria_m_v2')) || [];
+let historial = JSON.parse(localStorage.getItem('sgp_historial_planning')) || [];
 
 const dateKey  = new Date().toLocaleDateString();
 const dateFull = new Date().toLocaleDateString('es-ES', {
@@ -17,6 +18,29 @@ const dateFull = new Date().toLocaleDateString('es-ES', {
 
 /* ── REINICIO DIARIO ──────────────────────────────────────── */
 if (localStorage.getItem('geria_reset_v2') !== dateKey) {
+    // Guardar historial del día anterior antes de resetear
+    const ayer = localStorage.getItem('geria_reset_v2');
+    if (ayer) {
+        const entradas = [];
+        for (let p in data) {
+            data[p].filter(u => u.done).forEach(u => {
+                entradas.push({
+                    fecha: ayer,
+                    plan: p,
+                    auxiliar: localStorage.getItem('geria_auxiliar_v2') || '',
+                    nombre: u.nombre,
+                    hab: u.hab,
+                    time: u.time,
+                    incidencia: u.incidencia || ''
+                });
+            });
+        }
+        if (entradas.length) {
+            historial = [...historial, ...entradas];
+            localStorage.setItem('sgp_historial_planning', JSON.stringify(historial));
+        }
+    }
+    // Resetear para el nuevo día
     for (let p in data) {
         data[p].forEach(u => { u.done = false; u.time = null; u.incidencia = ''; });
     }
@@ -132,6 +156,17 @@ function importBackup(evt) {
 }
 
 /* ── CHECKLIST ACTIONS ────────────────────────────────────── */
+function decirHecho() {
+    if (!('speechSynthesis' in window)) return;
+    const msg = new SpeechSynthesisUtterance('Hecho');
+    msg.lang = 'es-ES';
+    msg.volume = 1;
+    msg.rate   = 0.9;
+    msg.pitch  = 1;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(msg);
+}
+
 function toggleCheck(id) {
     const u = data[currentPlan].find(u => u.id == id);
     u.done = !u.done;
@@ -139,6 +174,7 @@ function toggleCheck(id) {
         ? new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : null;
     if (u.done) {
+        decirHecho();
         matrix.push({
             t:   u.time,
             p:   currentPlan,
@@ -176,9 +212,8 @@ function saveUser() {
         hab:       document.getElementById('hab').value.trim(),
         pañal:     document.getElementById('pañal').value,
         obs:       document.getElementById('obs').value.trim(),
-        riesgo:       document.getElementById('riesgo').checked,
-        observacion:  document.getElementById('observacion') ? document.getElementById('observacion').checked : false,
-        encamado:     document.getElementById('encamado').checked,
+        riesgo:    document.getElementById('riesgo').checked,
+        encamado:  document.getElementById('encamado').checked,
         done:      false,
         time:      null,
         incidencia: ''
@@ -209,7 +244,6 @@ function startEdit(id) {
     document.getElementById('pañal').value      = u.pañal;
     document.getElementById('obs').value        = u.obs;
     document.getElementById('riesgo').checked   = u.riesgo;
-    if (document.getElementById('observacion')) document.getElementById('observacion').checked = u.observacion || false;
     document.getElementById('encamado').checked = u.encamado;
     window.scrollTo(0, 0);
     if (!document.getElementById('adminBox').classList.contains('open')) toggleBox('adminBox');
@@ -228,7 +262,6 @@ function resetForm() {
     ['nombre', 'hab', 'obs'].forEach(f => document.getElementById(f).value = '');
     document.getElementById('pañal').value      = '-';
     document.getElementById('riesgo').checked   = false;
-    if (document.getElementById('observacion')) document.getElementById('observacion').checked = false;
     document.getElementById('encamado').checked = false;
 }
 
@@ -333,18 +366,11 @@ function render() {
     renderHistorial();
 }
 
-function prioridad(u) {
-    if (u.riesgo)      return 0;
-    if (u.observacion) return 1;
-    if (u.encamado)    return 2;
-    return 3;
-}
-
 function renderChecklist() {
     const checkDiv   = document.getElementById('checklist');
     checkDiv.innerHTML = '';
-    const pendientes  = data[currentPlan].filter(u => !u.done).sort((a,b) => prioridad(a) - prioridad(b));
-    const completados = data[currentPlan].filter(u => u.done).sort((a,b) => prioridad(a) - prioridad(b));
+    const pendientes  = data[currentPlan].filter(u => !u.done);
+    const completados = data[currentPlan].filter(u => u.done);
 
     if (pendientes.length === 0 && completados.length === 0) {
         checkDiv.innerHTML = `<div class="empty-state">
@@ -438,11 +464,10 @@ function renderHistorial() {
 /* ── CREAR TARJETA ────────────────────────────────────────── */
 function createCard(u) {
     const card = document.createElement('div');
-    card.className = `user-card ${u.riesgo ? 'is-risk' : u.observacion ? 'is-obs' : ''} ${u.done ? 'checked' : ''}`;
+    card.className = `user-card ${u.riesgo ? 'is-risk' : ''} ${u.done ? 'checked' : ''}`;
 
     let badges = '';
     if (u.riesgo)                    badges += `<span class="badge badge-risk">⚠️ RIESGO</span>`;
-    if (u.observacion)               badges += `<span class="badge badge-obs">🔵 Observación</span>`;
     if (u.encamado)                  badges += `<span class="badge badge-cama">🛏️ Encamado</span>`;
     if (u.pañal && u.pañal !== '-') badges += `<span class="badge badge-pañal">🩺 Pañal ${u.pañal}</span>`;
     if (u.done && u.time)            badges += `<span class="badge badge-done">✓ ${u.time}</span>`;
@@ -471,6 +496,67 @@ function createCard(u) {
         <button class="btn-nota" onclick="addIncidencia(${u.id})" title="Añadir/editar incidencia">📝</button>`;
 
     return card;
+}
+
+/* ── HISTORIAL PERSISTENTE ───────────────────────────────── */
+function renderHistorialCompleto() {
+    const cont = document.getElementById('historialCompleto');
+    if (!cont) return;
+
+    if (!historial.length) {
+        cont.innerHTML = '<p style="text-align:center;color:var(--muted);padding:16px;font-size:0.85em;">Sin registros anteriores.</p>';
+        return;
+    }
+
+    // Agrupar por fecha
+    const porFecha = {};
+    historial.forEach(e => {
+        if (!porFecha[e.fecha]) porFecha[e.fecha] = [];
+        porFecha[e.fecha].push(e);
+    });
+
+    const fechas = Object.keys(porFecha).sort().reverse();
+
+    cont.innerHTML = fechas.map(fecha => {
+        const entradas = porFecha[fecha];
+        const planes   = [...new Set(entradas.map(e => e.plan))].sort();
+        const aux      = [...new Set(entradas.map(e => e.auxiliar).filter(Boolean))].join(', ');
+        const rows = planes.map(p => {
+            const del_plan = entradas.filter(e => e.plan === p);
+            return `
+                <tr style="background:#e8f4f6;">
+                    <td colspan="4" style="font-weight:700;font-size:0.8em;padding:5px 10px;">Plan ${p}</td>
+                </tr>
+                ${del_plan.map(e => `
+                <tr>
+                    <td>${e.time || '--'}</td>
+                    <td>${e.hab}</td>
+                    <td>${e.nombre}${e.incidencia ? `<br><small style="color:var(--danger)">⚠️ ${e.incidencia}</small>` : ''}</td>
+                    <td>${e.auxiliar || '--'}</td>
+                </tr>`).join('')}`;
+        }).join('');
+
+        return `
+            <div style="margin-bottom:14px;">
+                <div style="background:var(--primary);color:white;padding:8px 12px;border-radius:8px 8px 0 0;font-size:0.82em;font-weight:700;display:flex;justify-content:space-between;">
+                    <span>${fecha}</span>
+                    <span>${entradas.length} atendidos · ${aux}</span>
+                </div>
+                <div style="overflow-x:auto;border:1px solid #eee;border-radius:0 0 8px 8px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:0.8em;min-width:320px;">
+                        <thead>
+                            <tr style="background:#f8f9fa;">
+                                <th style="padding:6px 8px;text-align:left;">Hora</th>
+                                <th style="padding:6px 8px;text-align:left;">Hab</th>
+                                <th style="padding:6px 8px;text-align:left;">Residente</th>
+                                <th style="padding:6px 8px;text-align:left;">Auxiliar</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            </div>`;
+    }).join('');
 }
 
 /* ── SERVICE WORKER ───────────────────────────────────────── */

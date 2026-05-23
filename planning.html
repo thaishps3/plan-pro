@@ -166,6 +166,17 @@
                 </button>
             </div>
 
+            <!-- Historial completo de días anteriores -->
+            <div class="history-box no-print" style="margin-top:14px;">
+                <div class="history-header" onclick="toggleBox('historialCompletoBox'); renderHistorialCompleto()">
+                    <span>📅 HISTORIAL DE DÍAS ANTERIORES</span>
+                    <span id="historialCompletoBox-arrow">▼</span>
+                </div>
+                <div class="collapsible-content" id="historialCompletoBox">
+                    <div id="historialCompleto" style="padding:12px 14px;"></div>
+                </div>
+            </div>
+
             <!-- Área de impresión (solo visible al imprimir) -->
             <div id="printArea" class="only-print"></div>
 

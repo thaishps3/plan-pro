@@ -100,6 +100,33 @@
                         </label>
                         <button class="btn-save" onclick="saveUser()">💾 GUARDAR EN LISTA</button>
                     </div>
+
+                    <div style="padding:0 18px 18px;">
+                        <p style="font-size:0.78em;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;margin:14px 0 10px;">Tareas fijas por plan</p>
+                        <div style="display:flex;flex-direction:column;gap:8px;">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:13px;font-weight:700;color:var(--primary);min-width:20px;">A</span>
+                                <input type="text" id="tareaFijaA" placeholder="Tarea del Plan A...">
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:13px;font-weight:700;color:var(--primary);min-width:20px;">B</span>
+                                <input type="text" id="tareaFijaB" placeholder="Tarea del Plan B...">
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:13px;font-weight:700;color:var(--primary);min-width:20px;">C</span>
+                                <input type="text" id="tareaFijaC" placeholder="Tarea del Plan C...">
+                            </div>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:13px;font-weight:700;color:var(--primary);min-width:20px;">D</span>
+                                <input type="text" id="tareaFijaD" placeholder="Tarea del Plan D...">
+                            </div>
+                        </div>
+                        <button class="btn-save" style="margin-top:10px;" onclick="guardarTareasFijas()">💾 Guardar tareas fijas</button>
+
+                        <p style="font-size:0.78em;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.3px;margin:14px 0 10px;">Tarea rotativa (A-B / C-D)</p>
+                        <input type="text" id="tareaRotativaTxt" placeholder="Tarea rotativa...">
+                        <button class="btn-save" style="margin-top:8px;" onclick="guardarTareaRotativa()">💾 Guardar tarea rotativa</button>
+                    </div>
                     <div id="editList"></div>
                 </div>
             </div>
@@ -128,6 +155,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Tareas del turno -->
+            <div id="tareasDelTurno" class="no-print" style="display:none;"></div>
 
             <!-- Checklist principal -->
             <div id="checklist" class="no-print"></div>
@@ -192,6 +222,18 @@
     <script src="js/auth.js"></script>
     <script src="planning/js/script.js"></script>
     <script src="planning/js/session-check.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof tareas !== 'undefined') {
+                ['A','B','C','D'].forEach(p => {
+                    const el = document.getElementById('tareaFija' + p);
+                    if (el) el.value = tareas.fijas[p] || '';
+                });
+                const rot = document.getElementById('tareaRotativaTxt');
+                if (rot) rot.value = tareas.rotativa.texto || '';
+            }
+        });
+    </script>
 </body>
 
 </html>

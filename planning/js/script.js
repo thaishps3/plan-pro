@@ -7,6 +7,22 @@ let currentPlan     = 'A';
 let viewAllMode     = false;
 let currentAuxiliar = '';
 
+const TAREAS_DEFAULT = {
+    fijas: {
+        A: 'Poner pités en mesa',
+        B: 'Tareas de planta',
+        C: 'Repartir la cena',
+        D: 'Recoger los platos'
+    },
+    rotativa: {
+        texto:   'Bajar basura y ropa',
+        grupoPar:   ['A', 'B'],
+        grupoImpar: ['C', 'D']
+    }
+};
+
+let tareas = JSON.parse(localStorage.getItem('sgp_tareas_planning')) || TAREAS_DEFAULT;
+
 let data     = JSON.parse(localStorage.getItem('geria_p_v2')) || { A: [], B: [], C: [], D: [] };
 let matrix   = JSON.parse(localStorage.getItem('geria_m_v2')) || [];
 let historial = JSON.parse(localStorage.getItem('sgp_historial_planning')) || [];
@@ -35,6 +51,49 @@ if (localStorage.getItem('geria_reset_v2') !== dateKey) {
                 });
             });
         }
+
+        // Guardar tareas del turno del día anterior
+        const tareasGuardadas = JSON.parse(localStorage.getItem('sgp_tareas_planning')) || TAREAS_DEFAULT;
+        const ayerDate = new Date(ayer.split('/').reverse().join('-'));
+        const refDate  = new Date('2026-05-31');
+        ayerDate.setHours(0,0,0,0);
+        refDate.setHours(0,0,0,0);
+        const diasAyer = Math.round((ayerDate - refDate) / 86400000);
+        const grupoAyer = diasAyer % 2 === 0
+            ? tareasGuardadas.rotativa.grupoPar
+            : tareasGuardadas.rotativa.grupoImpar;
+
+        // Tarea fija por plan
+        for (let p in data) {
+            const tareaFija = tareasGuardadas.fijas[p];
+            if (tareaFija) {
+                entradas.push({
+                    fecha: ayer,
+                    plan: p,
+                    auxiliar: localStorage.getItem('geria_auxiliar_v2') || '',
+                    nombre: '📋 ' + tareaFija,
+                    hab: '—',
+                    time: '—',
+                    incidencia: '',
+                    esTarea: true
+                });
+            }
+        }
+
+        // Tarea rotativa
+        grupoAyer.forEach(p => {
+            entradas.push({
+                fecha: ayer,
+                plan: p,
+                auxiliar: localStorage.getItem('geria_auxiliar_v2') || '',
+                nombre: '🔄 ' + tareasGuardadas.rotativa.texto,
+                hab: '—',
+                time: '—',
+                incidencia: '',
+                esTarea: true
+            });
+        });
+
         if (entradas.length) {
             historial = [...historial, ...entradas];
             localStorage.setItem('sgp_historial_planning', JSON.stringify(historial));
@@ -361,9 +420,64 @@ function prepararImpresion() {
 
 /* ── RENDER PRINCIPAL ─────────────────────────────────────── */
 function render() {
+    renderTareas();
     renderChecklist();
     renderEditList();
     renderHistorial();
+}
+
+function renderTareas() {
+    const cont = document.getElementById('tareasDelTurno');
+    if (!cont) return;
+
+    // Referencia: 2026-05-31 (domingo) = A-B (par=0)
+    const ref = new Date('2026-05-31');
+    const hoy = new Date();
+    hoy.setHours(0,0,0,0);
+    ref.setHours(0,0,0,0);
+    const diasDesdeRef = Math.round((hoy - ref) / 86400000);
+    const grupoHoy = diasDesdeRef % 2 === 0
+        ? tareas.rotativa.grupoPar
+        : tareas.rotativa.grupoImpar;
+    const tieneRotativa = grupoHoy.includes(currentPlan);
+
+    const tareaFija = tareas.fijas[currentPlan] || '';
+
+    if (!tareaFija && !tieneRotativa) {
+        cont.style.display = 'none';
+        return;
+    }
+
+    cont.style.display = 'block';
+
+    let html = '';
+
+    if (tareaFija) {
+        html += `<div style="background:#fef3e2;border:0.5px solid #f0c070;border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+            <p style="font-size:11px;font-weight:700;color:#633806;text-transform:uppercase;letter-spacing:0.4px;margin:0 0 6px;display:flex;align-items:center;gap:6px;">
+                📋 Tarea del turno — Plan ${currentPlan}
+            </p>
+            <p style="font-size:13px;color:#412402;margin:0;display:flex;align-items:flex-start;gap:8px;">
+                <span style="width:6px;height:6px;border-radius:50%;background:#BA7517;flex-shrink:0;margin-top:5px;display:inline-block;"></span>
+                ${tareaFija}
+            </p>
+        </div>`;
+    }
+
+    if (tieneRotativa) {
+        const otroGrupo = grupoHoy.join(' y ');
+        html += `<div style="background:#e6f1fb;border:0.5px solid #85b7eb;border-radius:10px;padding:10px 12px;margin-bottom:8px;">
+            <p style="font-size:11px;font-weight:700;color:#042c53;text-transform:uppercase;letter-spacing:0.4px;margin:0 0 6px;">
+                🔄 Toca hoy — Plan ${otroGrupo}
+            </p>
+            <p style="font-size:13px;color:#0c447c;margin:0;display:flex;align-items:flex-start;gap:8px;">
+                <span style="width:6px;height:6px;border-radius:50%;background:#185fa5;flex-shrink:0;margin-top:5px;display:inline-block;"></span>
+                ${tareas.rotativa.texto}
+            </p>
+        </div>`;
+    }
+
+    cont.innerHTML = html;
 }
 
 function renderChecklist() {
@@ -557,6 +671,25 @@ function renderHistorialCompleto() {
                 </div>
             </div>`;
     }).join('');
+}
+
+/* ── CONFIGURACIÓN DE TAREAS (ADMIN) ─────────────────────── */
+function guardarTareasFijas() {
+    ['A','B','C','D'].forEach(p => {
+        const el = document.getElementById('tareaFija' + p);
+        if (el) tareas.fijas[p] = el.value.trim();
+    });
+    localStorage.setItem('sgp_tareas_planning', JSON.stringify(tareas));
+    render();
+    alert('✅ Tareas guardadas');
+}
+
+function guardarTareaRotativa() {
+    const txt = document.getElementById('tareaRotativaTxt');
+    if (txt) tareas.rotativa.texto = txt.value.trim();
+    localStorage.setItem('sgp_tareas_planning', JSON.stringify(tareas));
+    render();
+    alert('✅ Tarea rotativa guardada');
 }
 
 /* ── SERVICE WORKER ───────────────────────────────────────── */
